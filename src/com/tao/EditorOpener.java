@@ -6,13 +6,11 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyledDocument;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.text.*;
+import javax.swing.text.rtf.RTFEditorKit;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.*;
 
 
@@ -24,13 +22,14 @@ public class EditorOpener extends JFrame {
     private JMenuItem file_new = new JMenuItem();
     private JMenuItem file_exit = new JMenuItem();
     private JMenuItem file_save = new JMenuItem();
+    private JMenuItem file_saveAs = new JMenuItem();
 
     private JMenu edit = new JMenu();
     private JMenuItem edit_shear = new JMenuItem();
     private JMenuItem edit_copy = new JMenuItem();
     private JMenuItem edit_paste = new JMenuItem();
 
-    private JTextPane text = new JTextPane();
+    protected JTextPane text = new JTextPane();
 
     private boolean modified = false;
     private boolean status = false;
@@ -38,7 +37,7 @@ public class EditorOpener extends JFrame {
     String fileName;
     String filePath;
 
-    File chooseFile;
+    File chooseFile = null;
 
     public EditorOpener() {
         try {
@@ -58,10 +57,12 @@ public class EditorOpener extends JFrame {
         file_open.setText("打开");
         file_exit.setText("退出");
         file_save.setText("保存");
+        file_saveAs.setText("另存为");
 
         edit_shear.setText("剪切");
         edit_copy.setText("复制");
         edit_paste.setText("粘贴");
+
         file_new.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -79,6 +80,12 @@ public class EditorOpener extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveFile();
+            }
+        });
+        file_saveAs.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveAsFile();
             }
         });
         file_exit.addActionListener(new ActionListener() {
@@ -108,6 +115,7 @@ public class EditorOpener extends JFrame {
         file.add(file_new);
         file.add(file_open);
         file.add(file_save);
+        file.add(file_saveAs);
         file.add(file_exit);
         edit.add(edit_copy);
         edit.add(edit_paste);
@@ -152,9 +160,6 @@ public class EditorOpener extends JFrame {
         NewLines.newLines(text);
     }
 
-    public static void main(String[] args) {
-        SwingConsle.run(new EditorOpener(), 600, 600);
-    }
 
     public void openFile() {
         JFileChooser jFileChooser = new JFileChooser();
@@ -185,15 +190,34 @@ public class EditorOpener extends JFrame {
     }
 
     public void saveFile() {
-        JFileChooser jFileChooser = new JFileChooser();
-        jFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        jFileChooser.setCurrentDirectory(chooseFile);
-        int rVal = jFileChooser.showSaveDialog(EditorOpener.this);
-        if (rVal == JFileChooser.APPROVE_OPTION) {
+        if (chooseFile == null) {
+            saveAsFile();
+        } else {
             FileWriter writer;
             BufferedWriter out;
             try {
                 //System.out.println(text.getText());
+                writer = new FileWriter(chooseFile);
+                String str = text.getText();
+                writer.write(str);
+                writer.close();
+                modified = false;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void saveAsFile() {
+        FileSystemView jsv = FileSystemView.getFileSystemView();
+        File homeFile = jsv.getHomeDirectory();
+        JFileChooser jFileChooser = new JFileChooser(homeFile);
+        jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        int rVal =  jFileChooser.showSaveDialog(this);
+        if (rVal == JFileChooser.APPROVE_OPTION) {
+            chooseFile = jFileChooser.getSelectedFile();
+            FileWriter writer;
+            try {
                 writer = new FileWriter(chooseFile);
                 String str = text.getText();
                 writer.write(str);
