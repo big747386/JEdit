@@ -6,12 +6,14 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.Date;
 
 
 public class EditorOpener extends JFrame {
@@ -27,6 +29,7 @@ public class EditorOpener extends JFrame {
     private JMenuItem edit_shear = new JMenuItem();
     private JMenuItem edit_copy = new JMenuItem();
     private JMenuItem edit_paste = new JMenuItem();
+    private JMenuItem edit_inserttime = new JMenuItem();
 
     private JTextPane text = new JTextPane();
 
@@ -45,7 +48,7 @@ public class EditorOpener extends JFrame {
         }
 
         setTitle("文本编辑器");
-        setBounds(100,100,400,500);
+        setBounds(100, 100, 400, 500);
         setJMenuBar(bar);
         file.setText("文件");
         edit.setText("编辑");
@@ -59,6 +62,7 @@ public class EditorOpener extends JFrame {
         edit_shear.setText("剪切");
         edit_copy.setText("复制");
         edit_paste.setText("粘贴");
+        edit_inserttime.setText("插入当前时间");
         file_new.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -101,6 +105,12 @@ public class EditorOpener extends JFrame {
                 EMethod.copyText();
             }
         });
+        edit_inserttime.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                inserttime(text.getDocument());
+            }
+        });
         file.add(file_new);
         file.add(file_open);
         file.add(file_save);
@@ -108,6 +118,7 @@ public class EditorOpener extends JFrame {
         edit.add(edit_copy);
         edit.add(edit_paste);
         edit.add(edit_shear);
+        edit.add(edit_inserttime);
 
         text.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -127,8 +138,8 @@ public class EditorOpener extends JFrame {
             }
         });
 
-        final JTabbedPane tabbedPane=new JTabbedPane();    //创建选项卡面板
-        getContentPane().add(tabbedPane,BorderLayout.CENTER);   //把选项卡面板放到窗体中央
+        final JTabbedPane tabbedPane = new JTabbedPane();    //创建选项卡面板
+        getContentPane().add(tabbedPane, BorderLayout.CENTER);   //把选项卡面板放到窗体中央
         final JScrollPane scrollPane = new JScrollPane();    //创建滚动面板
         tabbedPane.add(scrollPane);
         scrollPane.setViewportView(text);
@@ -142,7 +153,7 @@ public class EditorOpener extends JFrame {
 
     public void openFile() {
         JFileChooser jFileChooser = new JFileChooser();
-        jFileChooser.setFileFilter(new FileNameExtensionFilter("文本文件","txt"));
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("文本文件", "txt"));
         int returnValue = jFileChooser.showOpenDialog(getContentPane());
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             chooseFile = jFileChooser.getSelectedFile();
@@ -157,7 +168,7 @@ public class EditorOpener extends JFrame {
                 while (info != null) {
                     SimpleAttributeSet set = new SimpleAttributeSet();
                     StyledDocument doc = text.getStyledDocument();
-                    doc.insertString(doc.getLength(), info+"\n", set);
+                    doc.insertString(doc.getLength(), info + "\n", set);
                     info = in.readLine();
                 }
                 in.close();
@@ -189,7 +200,18 @@ public class EditorOpener extends JFrame {
         }
     }
 
-    public void exitFile() {
+    public void inserttime(javax.swing.text.Document doc) {
+        text.setDocument(doc);
+        javax.swing.text.SimpleAttributeSet attributeSet = new javax.swing.text.SimpleAttributeSet();
+        text.setParagraphAttributes(attributeSet, true);
+        Date date = new Date();
+        try {
+            doc.insertString(text.getCaretPosition(),new java.util.Date().toString(),attributeSet);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+    }
+    public void exitFile(){
 
     }
 }
