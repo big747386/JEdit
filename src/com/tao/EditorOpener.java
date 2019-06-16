@@ -1,6 +1,7 @@
 package com.tao;
 
 import com.tao.Imp.EMethod;
+import com.tao.CopyAndPaste;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -14,27 +15,41 @@ import javax.swing.text.*;
 import javax.swing.text.rtf.RTFEditorKit;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.Date;
+
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+
+import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 
 
 public class EditorOpener extends JFrame {
     private JMenuBar bar = new JMenuBar();
 
-    private JMenu file = new JMenu();
-    private JMenuItem file_open = new JMenuItem();
-    private JMenuItem file_new = new JMenuItem();
-    private JMenuItem file_exit = new JMenuItem();
-    private JMenuItem file_save = new JMenuItem();
     private JMenuItem file_saveAs = new JMenuItem();
 
-    private JMenu edit = new JMenu();
-    private JMenuItem edit_shear = new JMenuItem();
-    private JMenuItem edit_copy = new JMenuItem();
-    private JMenuItem edit_paste = new JMenuItem();
     private JMenuItem edit_inserttime = new JMenuItem();
 
     protected JTextPane text = new JTextPane();
+
+    private JMenu file = new JMenu("文件");
+    private JMenuItem file_open = new JMenuItem("打开");
+    private JMenuItem file_new = new JMenuItem("新建");
+    private JMenuItem file_exit = new JMenuItem("退出");
+    private JMenuItem file_save = new JMenuItem("保存");
+
+    private JMenu edit = new JMenu("编辑");
+    private JMenuItem edit_cut = new JMenuItem("剪切");
+    private JMenuItem edit_copy = new JMenuItem("复制");
+    private JMenuItem edit_paste = new JMenuItem("粘贴");
+
+
+    CopyAndPaste.TextAreaMenu text1=new CopyAndPaste.TextAreaMenu();
 
     private boolean modified = false;
     private boolean status = false;
@@ -51,6 +66,8 @@ public class EditorOpener extends JFrame {
             e.printStackTrace();
         }
 
+
+
         setTitle("文本编辑器");
         setBounds(100, 100, 400, 500);
         setJMenuBar(bar);
@@ -58,17 +75,22 @@ public class EditorOpener extends JFrame {
         edit.setText("编辑");
         bar.add(file);
         bar.add(edit);
+
         file_new.setText("新建");
         file_open.setText("打开");
         file_exit.setText("退出");
         file_save.setText("保存");
         file_saveAs.setText("另存为");
 
-        edit_shear.setText("剪切");
         edit_copy.setText("复制");
         edit_paste.setText("粘贴");
 
         edit_inserttime.setText("插入当前时间");
+
+        edit_copy.setAccelerator(KeyStroke.getKeyStroke('C', InputEvent.CTRL_MASK));
+        edit_paste.setAccelerator(KeyStroke.getKeyStroke('V', InputEvent.CTRL_MASK));
+        edit_cut.setAccelerator(KeyStroke.getKeyStroke('X', InputEvent.CTRL_MASK));
+
 
         file_new.addActionListener(new ActionListener() {
             @Override
@@ -101,22 +123,22 @@ public class EditorOpener extends JFrame {
                 exitFile();
             }
         });
-        edit_shear.addActionListener(new ActionListener() {
+        edit_cut.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                EMethod.shearText();
+                action(e);
             }
         });
         edit_paste.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                EMethod.pasteText();
+                action(e);
             }
         });
         edit_copy.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                EMethod.copyText();
+                action(e);
             }
         });
         edit_inserttime.addActionListener(new ActionListener() {
@@ -132,8 +154,8 @@ public class EditorOpener extends JFrame {
         file.add(file_exit);
         edit.add(edit_copy);
         edit.add(edit_paste);
-        edit.add(edit_shear);
         edit.add(edit_inserttime);
+        edit.add(edit_cut);
 
         text.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -169,9 +191,16 @@ public class EditorOpener extends JFrame {
         getContentPane().add(tabbedPane, BorderLayout.CENTER);   //把选项卡面板放到窗体中央
         final JScrollPane scrollPane = new JScrollPane();    //创建滚动面板
         tabbedPane.add(scrollPane);
+        text.setComponentPopupMenu(text1.getPop());
         scrollPane.setViewportView(text);
-
+        scrollPane.setColumnHeaderView(text1);
         NewLines.newLines(text);
+    }
+
+
+    public static void main(String[] args) {
+        SwingConsle.run(new EditorOpener(), 600, 600);
+
     }
 
 
@@ -268,6 +297,17 @@ public class EditorOpener extends JFrame {
             }
         } else {
             System.exit(0);
+        }
+    }
+
+    public void action(ActionEvent e) {
+        String str = e.getActionCommand();
+        if (str.equals(edit_copy.getText())) { // 复制
+            text.copy();
+        } else if (str.equals(edit_paste.getText())) { // 粘贴
+            text.paste();
+        } else if (str.equals(edit_cut.getText())) { // 剪切
+            text.cut();
         }
     }
 }
