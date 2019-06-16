@@ -9,9 +9,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyledDocument;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.text.*;
+import javax.swing.text.rtf.RTFEditorKit;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.*;
 import java.util.Date;
 
@@ -24,6 +26,7 @@ public class EditorOpener extends JFrame {
     private JMenuItem file_new = new JMenuItem();
     private JMenuItem file_exit = new JMenuItem();
     private JMenuItem file_save = new JMenuItem();
+    private JMenuItem file_saveAs = new JMenuItem();
 
     private JMenu edit = new JMenu();
     private JMenuItem edit_shear = new JMenuItem();
@@ -31,14 +34,15 @@ public class EditorOpener extends JFrame {
     private JMenuItem edit_paste = new JMenuItem();
     private JMenuItem edit_inserttime = new JMenuItem();
 
-    private JTextPane text = new JTextPane();
+    protected JTextPane text = new JTextPane();
 
     private boolean modified = false;
+    private boolean status = false;
 
     String fileName;
     String filePath;
 
-    File chooseFile;
+    File chooseFile = null;
 
     public EditorOpener() {
         try {
@@ -58,11 +62,14 @@ public class EditorOpener extends JFrame {
         file_open.setText("打开");
         file_exit.setText("退出");
         file_save.setText("保存");
+        file_saveAs.setText("另存为");
 
         edit_shear.setText("剪切");
         edit_copy.setText("复制");
         edit_paste.setText("粘贴");
+
         edit_inserttime.setText("插入当前时间");
+
         file_new.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -73,6 +80,7 @@ public class EditorOpener extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 openFile();
+                status = true;
             }
         });
         file_save.addActionListener(new ActionListener() {
@@ -81,10 +89,16 @@ public class EditorOpener extends JFrame {
                 saveFile();
             }
         });
+        file_saveAs.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveAsFile();
+            }
+        });
         file_exit.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                EMethod.exitFile();
+                exitFile();
             }
         });
         edit_shear.addActionListener(new ActionListener() {
@@ -114,6 +128,7 @@ public class EditorOpener extends JFrame {
         file.add(file_new);
         file.add(file_open);
         file.add(file_save);
+        file.add(file_saveAs);
         file.add(file_exit);
         edit.add(edit_copy);
         edit.add(edit_paste);
@@ -123,18 +138,30 @@ public class EditorOpener extends JFrame {
         text.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                modified = true;
-
+                if (status == true) {
+                    modified = true;
+                }
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                modified = true;
+                if (status == true) {
+                    modified = true;
+                }
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                modified = true;
+                if (status == true) {
+                    modified = true;
+                }
+            }
+        });
+
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                exitFile();
             }
         });
 
@@ -147,9 +174,6 @@ public class EditorOpener extends JFrame {
         NewLines.newLines(text);
     }
 
-    public static void main(String[] args) {
-        SwingConsle.run(new EditorOpener(), 600, 600);
-    }
 
     public void openFile() {
         JFileChooser jFileChooser = new JFileChooser();
@@ -180,11 +204,9 @@ public class EditorOpener extends JFrame {
     }
 
     public void saveFile() {
-        JFileChooser jFileChooser = new JFileChooser();
-        jFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        jFileChooser.setCurrentDirectory(chooseFile);
-        int rVal = jFileChooser.showSaveDialog(EditorOpener.this);
-        if (rVal == JFileChooser.APPROVE_OPTION) {
+        if (chooseFile == null) {
+            saveAsFile();
+        } else {
             FileWriter writer;
             BufferedWriter out;
             try {
@@ -200,6 +222,7 @@ public class EditorOpener extends JFrame {
         }
     }
 
+
     public void inserttime(javax.swing.text.Document doc) {
         text.setDocument(doc);
         javax.swing.text.SimpleAttributeSet attributeSet = new javax.swing.text.SimpleAttributeSet();
@@ -213,5 +236,39 @@ public class EditorOpener extends JFrame {
     }
     public void exitFile(){
 
+    public void saveAsFile() {
+        FileSystemView jsv = FileSystemView.getFileSystemView();
+        File homeFile = jsv.getHomeDirectory();
+        JFileChooser jFileChooser = new JFileChooser(homeFile);
+        jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        int rVal =  jFileChooser.showSaveDialog(this);
+        if (rVal == JFileChooser.APPROVE_OPTION) {
+            chooseFile = jFileChooser.getSelectedFile();
+            FileWriter writer;
+            try {
+                writer = new FileWriter(chooseFile);
+                String str = text.getText();
+                writer.write(str);
+                writer.close();
+                modified = false;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void exitFile() {
+        if (modified == true) {
+            int rVal = JOptionPane.showConfirmDialog(null, "是" +
+                    "否将更改保存", "Editor", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (rVal == JOptionPane.YES_OPTION) {
+                saveFile();
+                System.exit(0);
+            } else if (rVal == JOptionPane.NO_OPTION){
+                System.exit(0);
+            }
+        } else {
+            System.exit(0);
+        }
     }
 }
