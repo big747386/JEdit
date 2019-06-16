@@ -234,7 +234,6 @@ public class EditorOpener extends JFrame {
             e.printStackTrace();
         }
     }
-    public void exitFile(){
 
     public void saveAsFile() {
         FileSystemView jsv = FileSystemView.getFileSystemView();
